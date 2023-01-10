@@ -1,0 +1,175 @@
+---
+title: "Algoritma ID3 Dengan Data Lain"
+date: "`r Sys.Date()`"
+author: "Dona Dellila Doja Se-Institut Teknologi Statistika dan Bisnis Muhammadiyah"
+output:
+  rmdformats::readthedown:
+    self_contained: true
+    thumbnails: true
+    lightbox: true
+    gallery: false
+    highlight: tango
+bibliography: references.bib
+---
+
+```{=html}
+<style>
+body{
+text-align: justify}
+</style>
+```
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Algoritma ID3
+
+#### Pengertian
+Algoritma ID3 atau Iterative Dichotomiser 3 adalah sebuah metode yang digunakan untuk membuat pohon keputusan yang telah dikembangkan oleh J. Ross Quinlan sejak tahun 1986.
+
+Algoritma ID3 melakukan pencarian secara menyeluruh pada semua kemungkinan pohon keputusan. Algoritma ID3 berusaha membangun decision tree (pohon keputusan) secara top-down (dari atas ke bawah)
+
+#### Strutur Pohon Keputusan
+Struktur pohon keputusan terdiri dari root node (node akar), internal node (node cabang), dan leaf node. Proses klasifikasi dilakukan dari node paling atas dilanjutkan ke bawah melalui cabang-cabang sampai dihasilkan node daun (leafes) dimana node daun ini menunjukkan hasil akhir klasifikasi.
+
+Pembentukan pohon klasifikasi dengan algoritma ID3 melalui dua langkah, yaitu :
+
+  - Menghitung Nilai Entropy
+  - Menghitung nilai information gain dari setiap variabel
+
+# Tahapan Algoritma ID3
+Tahapan Algoritma ID3 bisa dibagi menjadi 6 langkah yaitu :
+
+#### Menyiapkan Dataset 
+  Dataset yang digunakan yaitu dataset yang berlabel nominal. Untuk algoritma ID3 menggunakan data jenis klasifikasi.   
+     
+#### Menghitung Nilai Entropy
+  Konsep Entropy digunakan untuk mengukur “seberapa informatifnya” sebuah node (yang biasanya disebut seberapa baiknya).
+     
+     Rumus Entropy :
+     
+    𝑒𝑛𝑡𝑟𝑜𝑝𝑦 (𝑠)= −𝑝(+)𝑙𝑜𝑔2𝑝(+) −𝑝(-)𝑙𝑜𝑔2𝑝(-)
+     
+   Keterangan :
+     
+   S = Himpunan (dataset) Kasus.
+  
+  𝑝(+) = jumlah label yang bersolusi positif (mendukung)
+  dibagi total kasus. 
+  
+  𝑝(−) = jumlah label yang bersolusi negative (tidak mendukung)
+  dibagi total kasus.
+
+#### Menghitung Nilai Gain
+  Information gain adalah kriteria pemisahan yang menggunakan pengukuran entropy.  Information gain digunakan untuk mengukur efektivitas suatu atribut dalam mengklasifikasikan data.
+  
+#### Menentukan Root Node
+  Root node atau node akar ditentukan berdasarkan nilai information gain yang telah di cari. Atribut dengan nilai information gain tertinggi akan menjadi root node nya. Atribut yang telah di pilih tidak diikutkan lagi ke perhitungan entropy dan information gain selanjutnya. 
+
+#### Membuat Node Cabang
+  Node cabang di dapat dari perhitungan entropy dan information gain selanjutnya.
+
+#### Ulangi Langah 2-4 Hingga Membentuk Sebuah Pohon Keputusan
+  Mengulangi langkah 2-4 hingga membentuk pohon keputusan.
+
+#  Eksperimen Algoritma ID3
+#### Library
+```{r}
+library(dplyr)
+```
+
+#### Loading Dataset
+sebagai contoh kita akan menggunakan dataset Creditrisk
+```{r eval=FALSE}
+library(readr)
+CreditRisk <- read_csv("~/semester 3/data mining/dataset/CreditRisk.csv")
+View(CreditRisk)
+df <- CreditRisk
+#df$Credit_Risk<- unclass(df$Credit_Risk)
+```
+
+#### Menghitung Nilai Entropy 
+Nilai entropy pada setiap kolom dapat dihitung sebagai berikut
+```{r}
+entropy <- function(target) {
+  freq <- table(target)/length(target)
+  # Vektorisasi kolom dataframe
+  vec <- as.data.frame(freq)[,2]
+  #drop 0 to avoid NaN resulting from log2
+  vec<-vec[vec>0]
+  # Menghitung Nilai Entropy
+  -sum(vec * log2(vec))}
+```
+Menghitung Nilai Entropy kolom Credit_Risk
+```{r}
+print(entropy(df$Credit_Risk))
+```
+Menghitung Nilai Entropy kolom Applicant_ID
+```{r}
+print(entropy(df$Applicant_ID))
+```
+Menghitung Nilai Entropy kolom Credit_Score
+```{r}
+print(entropy(df$Credit_Score))
+```
+Menghitung Nilai Entropy kolom Late_Payments
+```{r}
+print(entropy(df$Late_Payments))
+```
+Menghitung Nilai Entropy kolom Months_In_Job
+```{r}
+print(entropy(df$Months_In_Job))
+```
+Menghitung Nilai Entropy kolom Debt_Income_Ratio
+```{r}
+print(entropy(df$Debt_Income_Ratio))
+```
+Menghitung Nilai Entropy kolom Loan_Amt
+```{r}
+print(entropy(df$Loan_Amt))
+```
+Menghitung Nilai Entropy kolom Liquid_Assets
+```{r}
+print(entropy(df$Liquid_Assets))
+```
+Menghitung Nilai Entropy kolom Num_Credit_Lines
+```{r}
+print(entropy(df$Num_Credit_Lines))
+```
+
+#### Nilai Information Gain
+Menghitung nilai information gain dari setiap kolom dapat dilakukan sebagai berikut :
+```{r}
+#mengembalikan IG untuk variabel numerik
+IG_numeric<-function(data, feature, target, bins=9) {
+  #Hapus baris di mana fitur adalah NA
+  data<-data[!is.na(data[,feature]),]
+  #menghitung entropi untuk induknya
+  e0<-entropy(data[,target])
+  
+  data$cat<-cut(data[,feature], breaks=bins, labels=c(1:bins))
+  
+  #gunakan dplyr untuk menghitung e dan p untuk setiap nilai kolom
+  dd_data <- data %>% group_by(cat) %>% summarise(e=entropy(get(target)), 
+                 n=length(get(target)),
+                 min=min(get(feature)),
+                 max=max(get(feature))
+                 )
+  
+  #menghitung p untuk setiap nilai kolom
+  dd_data$p<-dd_data$n/nrow(data)
+  #Menghitung IG
+  IG<-e0-sum(dd_data$p*dd_data$e)
+  
+  return(IG)
+}
+#Menghitung nilai information gain untuk kolom Applicant_ID
+IG_numeric(CreditRisk, "Applicant_ID", "Credit_Risk", bins=9)
+```
+
+Menghitung nilai information gain untuk kolom Credit_Score
+```{r eval=FALSE}
+
+IG_numeric(CreditRisk, "Credit_score", "Credit_Risk", bins = 1)
+```
+
