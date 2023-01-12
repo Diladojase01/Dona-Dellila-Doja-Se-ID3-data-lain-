@@ -137,32 +137,40 @@ print(entropy(df$Decision_Making))
 ```
 #### Nilai Information Gain
 Menghitung nilai information gain dari setiap kolom dapat dilakukan sebagai berikut :
+```{r}
+#returns IG for numerical variables.
+IG_numeric<-function(SportSkill_Training, feature, target, bins=8) {
+  #Strip out rows where feature is NA
+  data<-SportSkill_Training[!is.na(data[,feature]),]
+  #compute entropy for the parent
+  e0<-entropy(data[,target])
+  
+  data$cat<-cut(data[,feature], breaks=bins, labels=c(1:bins))
+  
+  #use dplyr to compute e and p for each value of the feature
+  dd_data <- data %>% group_by(cat) %>% summarise(e=entropy(get(target)), 
+                 n=length(get(target)),
+                 min=min(get(feature)),
+                 max=max(get(feature))
+                 )
+  
+  #calculate p for each value of feature
+  dd_data$p<-dd_data$n/nrow(data)
+  #compute IG
+  IG<-e0-sum(dd_data$p*dd_data$e)
+  
+  return(IG)
+}
+```
+
+
+
 
 
 #### Data Frame
-Data Frame untuk Nilai Entropy dan Information Gain Setiap Kolom yang diurutkan sebagai berikut
-```{r}
-Fitur_Exploration <- function(df, bin){
-  E <- numeric()
-  for (i in 1:ncol(df)){
-    nama<-names(df)[i]
-    E[i]<-entropy(df[,nama])
-    }
-  
-  ig <- numeric()
-  kol=ncol(df)-1
-  for (i in 1:kol){
-    ig[i]<-IG_numeric(df, names(df)[i], names(df)[ncol(df)], bins=bin)
-  }
-  ig[ncol(df)]<-0 #Masih dicek lagi
-  Column_Name <- names(df)
-  Entropy <- E
-  IG <- ig
-  df_E <- data.frame(Column_Name, Entropy, IG)
-  df_E_sort <- df_E[order(-IG),]
-  return(df_E_sort)
-} 
-```
+Data Frame untuk Nilai Entropy dan Information Gain Setiap Kolom yang diurutkan sebagai berikut:
+
+
 # Membuat Pohon Keputusan dila
 ```{r}
 library(rpart)
@@ -170,3 +178,10 @@ library(rpart.plot)
 trees<-rpart(Prime_Sport ~., data = SportSkill_Training, method = 'class')
 rpart.plot(trees)
 ```
+# Referensi
+1. https://rpubs.com/Eliyanto29/Entropy_and_Information_G
+2. https://rpubs.com/gluc/ID3
+3. https://rstudio-pubs-static.s3.amazonaws.com/455435_30729e265f7a4d049400d03a18e218db.html
+4. https://medium.com/analytics-vidhya/visualizing-decision-tree-with-r-774f58ac23c
+
+
