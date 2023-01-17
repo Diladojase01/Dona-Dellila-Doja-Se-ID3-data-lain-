@@ -1,9 +1,9 @@
 ---
-title: "Algoritma ID3 Dengan R Data Lain"
+title: "Algoritma ID3 Dengan RStudio"
 date: "`r Sys.Date()`"
-author: "Dona Dellila Doja Se-Institut Teknologi Statistika dan Bisnis Muhammadiyah"
+author: Dona Dellila Doja Se-Institut Teknologi Statistika dan Bisnis Muhammadiyah
 output:
-  rmdformats::readthedown:
+  rmdformats::robobook:
     self_contained: true
     thumbnails: true
     lightbox: true
@@ -34,8 +34,8 @@ Struktur pohon keputusan terdiri dari root node (node akar), internal node (node
 
 Pembentukan pohon klasifikasi dengan algoritma ID3 melalui dua langkah, yaitu :
 
-  - Menghitung Nilai Entropy
-  - Menghitung nilai information gain dari setiap variabel
+  1. Menghitung Nilai Entropy
+  2. Menghitung nilai information gain dari setiap variabel
 
 # Tahapan Algoritma ID3
 Tahapan Algoritma ID3 bisa dibagi menjadi 6 langkah yaitu :
@@ -75,106 +75,73 @@ Tahapan Algoritma ID3 bisa dibagi menjadi 6 langkah yaitu :
 #  Eksperimen Algoritma ID3
 
 #### Library
-```{r eval=FALSE}
+```{r}
 library(dplyr)
 ```
 
 #### Loading Dataset
-sebagai contoh kita akan menggunakan dataset iris 
+Pada Eksperimen ini menggunakan Dataset Penguin
 ```{r}
-library(readr)
-SportSkill_Training <- read_csv("SportSkill-Training.csv")
-View(SportSkill_Training)
-df <- SportSkill_Training
+library(readxl)
+Data_penguin <- read_excel("Data penguin.xlsx")
+View(Data_penguin)
 ```
 
 #### Menghitung Nilai Entropy 
-Nilai entropy pada setiap kolom dapat dihitung sebagai berikut
+Nilai entropy pada setiap kolom dapat dihitung sebagai berikut :
 ```{r}
-entropy <- function(target) {
-  freq <- table(target)/length(target)
-  # Vektorisasi kolom dataframe
-  vec <- as.data.frame(freq)[,2]
-  #drop 0 to avoid NaN resulting from log2
-  vec<-vec[vec>0]
-  # Menghitung Nilai Entropy
-  -sum(vec * log2(vec))}
-```
-Menghitung Nilai Entropy kolom Species
-```{r}
-print(entropy(df$Prime_Sport))
-```
-Menghitung Nilai Entropy kolom sepal.lenght
-```{r}
-print(entropy(df$Age))
-```
-Menghitung Nilai Entropy kolom sepal.width
-```{r}
-print(entropy(df$Strength))
-```
-Menghitung Nilai Entropy kolom petal.length
-```{r}
-print(entropy(df$Quickness))
-```
-Menghitung Nilai Entropy kolom petal.width
-```{r}
-print(entropy(df$Injury))
-```
-Menghitung Nilai Entropy kolom petal.width
-```{r}
-print(entropy(df$Vision))
-```
-Menghitung Nilai Entropy kolom petal.width
-```{r}
-print(entropy(df$Endurance))
-```
-Menghitung Nilai Entropy kolom petal.width
-```{r}
-print(entropy(df$Agility))
-```
-Menghitung Nilai Entropy kolom petal.width
-```{r}
-print(entropy(df$Decision_Making))
-```
-#### Nilai Information Gain
-Menghitung nilai information gain dari setiap kolom dapat dilakukan sebagai berikut :
-```{r}
-#mengembalikan IG untuk variabel numerik
-IG_numeric<-function(data, feature, target, bins=9) {
-  #Hapus baris di mana fitur adalah NA
-  data<-data[!is.na(data[,feature]),]
-  #menghitung entropi untuk induknya
-  e0<-entropy(data[,target])
-  
-  data$cat<-cut(data[,feature], breaks=bins, labels=c(1:bins))
-  
-  #gunakan dplyr untuk menghitung e dan p untuk setiap nilai kolom
-  dd_data <- data %>% group_by(cat) %>% summarise(e=entropy(get(target)), 
-                 n=length(get(target)),
-                 min=min(get(feature)),
-                 max=max(get(feature))
-                 )
-  
-  #menghitung p untuk setiap nilai kolom
-  dd_data$p<-dd_data$n/nrow(data)
-  #Menghitung IG
-  IG<-e0-sum(dd_data$p*dd_data$e)
-  
-  return(IG)
+IsPure <- function(data) {
+  length(unique(data[,ncol(data)])) == 1
+}
+Entropy <- function( vls ) {
+  res <- vls/sum(vls) * log2(vls/sum(vls))
+  res[vls == 0] <- 0
+  -sum(res)
 }
 ```
 
-#### Data Frame
-Data Frame untuk Nilai Entropy dan Information Gain Setiap Kolom yang diurutkan sebagai berikut:
-
-
-# Membuat Pohon Keputusan dila
-```{r}
-library(rpart)
-library(rpart.plot)
-trees<-rpart(Prime_Sport ~., data = SportSkill_Training, method = 'class')
-rpart.plot(trees)
+```{r eval=FALSE}
+print(entropy(Data_penguin$Culmen.Length))
 ```
+        
+        ##  [1] 7.136214
+
+
+
+#### Nilai Information Gain
+Menghitung nilai information gain dari setiap kolom dapat dilakukan sebagai berikut :
+```{r}
+InformationGain <- function( tble ) {
+  tble <- as.data.frame.matrix(tble)
+  entropyBefore <- Entropy(colSums(tble))
+  s <- rowSums(tble)
+  entropyAfter <- sum (s / sum(s) * apply(tble, MARGIN = 1, FUN = Entropy ))
+  informationGain <- entropyBefore - entropyAfter
+  return (informationGain)
+}
+
+InformationGain(table(Data_penguin[,c('Culmen.Length', 'Species')]))
+InformationGain(table(Data_penguin[,c('Culmen.Depth', 'Species')]))
+```
+
+#information gain
+
+
+
+
+Menghitung nilai information gain untuk kolom Sepal.Length
+
+##### data frame
+
+
+
+
+
+
+
+
+
+
 
 # Referensi
 1. https://rpubs.com/Eliyanto29/Entropy_and_Information_G
